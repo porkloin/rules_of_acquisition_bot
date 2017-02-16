@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import re
 import random
 from slackclient import SlackClient
 
@@ -11,7 +12,7 @@ jsonfile = 'ferengiRulesOfAcquisition.json'
 #constants
 AT_BOT = "<@" + str(BOT_ID) + ">"
 EXAMPLE_COMMAND = "random"
-
+REGEX = re.compile('\d+')
 #start client
 slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 
@@ -21,12 +22,24 @@ def handle_command(command, channel):
         depending on our functions and maybe even asks for more if
         necessary
     """
-    response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + "* command, because this bot is janky as hell."
+    response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + "* command or enter a specific number."
     if command.startswith(EXAMPLE_COMMAND):
-        with open (jsonfile) as  f:
+        with open (jsonfile) as f:
             data = json.load(f)
             choice = random.choice(data)
             response = "Rule of Acquisition number " + str(choice['Number']) + ": " + choice['Rule']
+            f.close()
+    if REGEX.match(command):
+        with open (jsonfile) as f:
+            data = json.load(f)
+            choice = None;
+            for i in data:
+                if i.get('Number') == int(command):
+                    choice = i
+            if choice:
+                response = "Rule of Acquisition number " + str(choice['Number']) + ": " + choice['Rule']
+            else:
+                response = "There is no rule number " + str(command) + ", try again with a number between 1 and " + str(len(data))
             f.close()
     slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)
 
