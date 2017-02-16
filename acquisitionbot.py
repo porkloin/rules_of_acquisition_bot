@@ -17,13 +17,16 @@ REGEX = re.compile('\d+')
 slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 
 # Make a list of valid commands
-validCommands = ["random"]
+validCommands = ["random", "list all"]
 
 # Load the JSON into memory
 with open(jsonfile) as f:
     rules = json.load(f)
 
-import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
+# Sort all rules into Number: complete dict
+sortedRules = {}
+for i in rules:
+    sortedRules[i['Number']] = i
 
 
 def handle_command(command, channel):
@@ -32,25 +35,36 @@ def handle_command(command, channel):
         depending on our functions and maybe even asks for more if
         necessary
     """
-    response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + "* command or enter a specific number."
+    # check if command is a digit
+    try:
+        command = int(command)
+    except ValueError:
+        # command is a string
+        pass
 
-    if command in validCommands:
-        with open(jsonfile) as f:
+    # If we have a number, try this
+    if str(command).isdigit():
+        if command in sortedRules.keys():
+            response = "Rule of Acquisition number " + str(sortedRules[command]['Number']) + ": " + sortedRules[command]['Rule']
+
+        else:
+            # response = "There is no rule number " + str(command) + ", try again with a number between 1 and " + str(sortedRules[-1['Number']])
+            response = "There is no rule number " + str(command) + ", try again with a number between 1 and " + str(max(sortedRules.keys()))
+            print response
+
+    # If we don't have a number, check the list of valid commands
+    else:
+        if str(command).lower() == "random":
             choice = random.choice(rules)
             response = "Rule of Acquisition number " + str(choice['Number']) + ": " + choice['Rule']
-            f.close()
-    if REGEX.match(command):
-        with open(jsonfile) as f:
-            data = json.load(f)
-            choice = None
-            for i in data:
-                if i.get('Number') == int(command):
-                    choice = i
-            if choice:
-                response = "Rule of Acquisition number " + str(choice['Number']) + ": " + choice['Rule']
-            else:
-                response = "There is no rule number " + str(command) + ", try again with a number between 1 and " + str(len(data))
-            f.close()
+
+        elif str(command).lower() == "list all":
+            choice = random.choice(rules)
+            response = "The available list of rules is as follows: {}".format(sortedRules.keys())
+
+        if command not in validCommands:
+            response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + "* command or enter a specific number."
+
     slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)
 
 
