@@ -1,6 +1,6 @@
 #FERENGI RULES OF ACQUISITION: SLACK BOT EDITION
 
-##_Sell the sizzle, not the steak._
+##Rule of Acquisition Number 153: _Sell the sizzle, not the steak._
 
 Quickstart:
 
